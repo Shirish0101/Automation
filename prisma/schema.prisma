@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  OWNER
+}
+
+enum BillStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
+
+enum PaymentMode {
+  CASH
+  UPI
+  BANK_TRANSFER
+  CHEQUE
+  CARD
+  OTHER
+}
+
+model Building {
+  id        String   @id @default(cuid())
+  name      String
+  address   String?
+  createdAt DateTime @default(now())
+  flats     Flat[]
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  phone        String?
+  passwordHash String
+  role         Role       @default(OWNER)
+  flatId       String?
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  flat         Flat?      @relation(fields: [flatId], references: [id])
+  auditLogs    AuditLog[]
+}
+
+model Flat {
+  id                 String   @id @default(cuid())
+  buildingId         String
+  roomNo             String
+  ownerName          String
+  ownerEmail         String?
+  ownerPhone         String?
+  sqft               Decimal  @default(0)
+  ratePerSqft        Decimal  @default(0)
+  carParkingCount    Int      @default(0)
+  carParkingRate     Decimal  @default(0)
+  twoWheelerCount    Int      @default(0)
+  twoWheelerRate     Decimal  @default(0)
+  waterBill          Decimal  @default(0)
+  lightBill          Decimal  @default(0)
+  otherCharges       Decimal  @default(0)
+  notes              String?
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  building           Building @relation(fields: [buildingId], references: [id])
+  users              User[]
+  bills              Bill[]
+
+  @@unique([buildingId, roomNo])
+}
+
+model Bill {
+  id                      String     @id @default(cuid())
+  flatId                  String
+  billMonth               String
+  sqft                    Decimal
+  ratePerSqft             Decimal
+  maintenanceAmount       Decimal
+  carParkingAmount        Decimal
+  twoWheelerParkingAmount Decimal
+  waterBill               Decimal
+  lightBill               Decimal
+  otherCharges            Decimal
+  lateFees                Decimal    @default(0)
+  interest                Decimal    @default(0)
+  totalAmount             Decimal
+  paidAmount              Decimal    @default(0)
+  outstandingAmount       Decimal
+  status                  BillStatus @default(UNPAID)
+  dueDate                 DateTime?
+  createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
+  flat                    Flat       @relation(fields: [flatId], references: [id])
+  payments                Payment[]
+
+  @@unique([flatId, billMonth])
+}
+
+model Payment {
+  id          String      @id @default(cuid())
+  billId      String
+  amount      Decimal
+  mode        PaymentMode
+  referenceNo String?
+  remarks     String?
+  paidAt      DateTime    @default(now())
+  createdAt   DateTime    @default(now())
+  bill        Bill        @relation(fields: [billId], references: [id])
+}
+
+model BulkUpload {
+  id          String   @id @default(cuid())
+  fileName    String
+  rowCount    Int
+  successRows Int
+  failedRows  Int
+  createdBy   String?
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String?
+  entityId  String?
+  before    Json?
+  after     Json?
+  message   String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+}

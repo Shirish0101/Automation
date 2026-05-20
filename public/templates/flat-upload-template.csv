@@ -1,0 +1,2 @@
+room_no,owner_name,owner_email,owner_phone,sqft,rate_per_sqft,car_parking_count,car_parking_rate,two_wheeler_count,two_wheeler_rate,water_bill,light_bill,other_charges
+101,Sample Owner,sample@example.com,9000000000,750,3.5,1,500,1,150,350,250,0
